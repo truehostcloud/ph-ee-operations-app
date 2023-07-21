@@ -5,4 +5,5 @@ Release Notes
     * Payment Hub OPs
         * Transaction Requests
             * [SER-1605] - Filter incoming transactions by user's currency and payeePartyIds
+            * [SER-1646] - Filter incoming transactions by user's assigned payeePartyIdTypes
             
