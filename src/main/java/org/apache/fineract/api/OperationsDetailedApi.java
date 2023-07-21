@@ -57,6 +57,14 @@ public class OperationsDetailedApi {
     @Autowired
     private AppUserRepository appUserRepository;
 
+    @Autowired
+    private AMSConfig amsConfig;
+
+    @GetMapping("/ams/sources")
+    public List<AMSConfig.AmsSource> getAmsSourcesList() {
+        return amsConfig.getAmsSourcesList();
+    }
+
     @GetMapping("/transfers")
     public Page<TransferResponse> transfers(
             @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
@@ -331,7 +339,7 @@ public class OperationsDetailedApi {
         }
     }
 
-    private List<Specifications<TransactionRequest>> checkUserCurrenciesAssigned(AppUser currentUser, String currency) {
+    public List<Specifications<TransactionRequest>> checkUserCurrenciesAssigned(AppUser currentUser, String currency) {
         List<Specifications<TransactionRequest>> specs = new ArrayList<>();
 
         if (currentUser.getCurrenciesList().equals(Collections.singletonList("*"))) {
@@ -341,7 +349,7 @@ public class OperationsDetailedApi {
             }
         } else {
             // user is assigned currency in the list
-            if (currency != null && currentUser.getCurrenciesList().contains(currency)) {
+            if (currency != null) {
                 specs.add(TransactionRequestSpecs.match(TransactionRequest_.currency, currency));
             } else {
                 specs.add(TransactionRequestSpecs.in(TransactionRequest_.currency, currentUser.getCurrenciesList()));
@@ -351,18 +359,18 @@ public class OperationsDetailedApi {
         return specs;
     }
 
-    private List<Specifications<TransactionRequest>> checkUserDukasAssigned(AppUser currentUser, String payeePartyId) {
+    public List<Specifications<TransactionRequest>> checkUserDukasAssigned(AppUser currentUser, String payeePartyId) {
 
         List<Specifications<TransactionRequest>> specs = new ArrayList<>();
 
         if (currentUser.getPayeePartyIdsList().equals(Collections.singletonList("*"))) {
             // user is allowed to see data from all dukas. Check if they wanna filter for a specific payee, otherwise don't add to spec
-            if (payeePartyId != null && currentUser.getPayeePartyIdsList().contains(payeePartyId)) {
+            if (payeePartyId != null) {
                 specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
             }
         } else {
             // user is assigned dukas in the list
-            if (payeePartyId != null && currentUser.getPayeePartyIdsList().contains(payeePartyId)) {
+            if (payeePartyId != null) {
                 specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
             } else {
                 specs.add(TransactionRequestSpecs.in(TransactionRequest_.payeePartyId, currentUser.getPayeePartyIdsList()));
@@ -377,12 +385,12 @@ public class OperationsDetailedApi {
 
         if (currentUser.getPayeePartyIdTypesList().equals(Collections.singletonList("*"))) {
             // user is allowed to see data from all payeePartyIdTypes. Check if they wanna filter for a specific payee, otherwise don't add to spec
-            if (payeePartyIdType != null && currentUser.getPayeePartyIdTypesList().contains(payeePartyIdType)) {
+            if (payeePartyIdType != null) {
                 specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
             }
         } else {
             // user is assigned payeePartyIdTypes in the list
-            if (payeePartyIdType != null && currentUser.getPayeePartyIdTypesList().contains(payeePartyIdType)) {
+            if (payeePartyIdType != null) {
                 specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
             } else {
                 specs.add(TransactionRequestSpecs.in(TransactionRequest_.payeePartyIdType, currentUser.getPayeePartyIdTypesList()));

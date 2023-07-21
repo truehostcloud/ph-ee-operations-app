@@ -78,7 +78,7 @@ class OperationsDetailedApiTest {
     }
 
     @Test
-    void testTransactionRequestFilter_UserNotAuthorizedForCurrencies() {
+    void testTransactionRequestFilter_UserNotAuthorizedForCurrenciesOrPayeePartyIdsOrPayeePartyIdTypes() {
         List<Specifications<TransactionRequest>> specs = Collections.emptyList();
         String sortedBy = null;
         String sortedOrder = "ASC";
@@ -88,43 +88,12 @@ class OperationsDetailedApiTest {
         String payeePartyId = "12345";
         String payeePartyIdType = "MNO";
 
-        AppUser currentUser = new AppUser();
-        currentUser.setCurrenciesList(null); // User not authorized for currencies
-        currentUser.setPayeePartyIdsList(Collections.singletonList("*"));
-        currentUser.setPayeePartyIdTypesList(Collections.singletonList("*"));
+        AppUser currentUser = new AppUser(); // User not authorized for anything
         when(appUserRepository.findAppUserByName(any())).thenReturn(currentUser);
 
         setupSecurityContext(currentUser);
         // Act
-        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, payeePartyIdType);
-
-        // Assert
-        verify(appUserRepository, times(1)).findAppUserByName(any());
-        verifyZeroInteractions(transactionRequestRepository);
-        assertEquals(0, result.getTotalElements());
-        // Add more assertions based on your logic when the user is not authorized for currencies
-    }
-
-    @Test
-    void testTransactionRequestFilter_UserNotAuthorizedForPayeePartyIds() {
-        List<Specifications<TransactionRequest>> specs = Collections.emptyList();
-        String sortedBy = null;
-        String sortedOrder = "ASC";
-        Integer page = 0;
-        Integer size = 10;
-        String currency = "USD";
-        String payeePartyId = "12345";
-        String payeePartyIdType = "MNO";
-
-        AppUser currentUser = new AppUser();
-        currentUser.setPayeePartyIdsList(null);
-        currentUser.setCurrenciesList(Collections.singletonList("*"));
-        currentUser.setPayeePartyIdTypesList(Collections.singletonList("*"));
-        when(appUserRepository.findAppUserByName(any())).thenReturn(currentUser);
-
-        setupSecurityContext(currentUser);
-        // Act
-        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, payeePartyIdType);
+         Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, payeePartyIdType);
 
         // Assert
         verify(appUserRepository, times(1)).findAppUserByName(any());
@@ -141,6 +110,31 @@ class OperationsDetailedApiTest {
 
         // Act
         List<Specifications<TransactionRequest>> result = operationsDetailedApi.checkUserPayeePartyIdTypesAssigned(currentUser, payeePartyIdType);
+
+        // Assert
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void testCheckUserPayeePartyIdsAssigned_AssignedNone() {
+        AppUser currentUser = mock(AppUser.class);
+        String payeePartyId = "12345";
+        when(currentUser.getPayeePartyIdTypesList()).thenReturn(new ArrayList<>());
+
+        // Act
+        List<Specifications<TransactionRequest>> result = operationsDetailedApi.checkUserDukasAssigned(currentUser, payeePartyId);
+
+        // Assert
+        assertEquals(1, result.size());
+    }
+    @Test
+    void testCheckUserCurrenciesAssigned_AssignedNone() {
+        AppUser currentUser = mock(AppUser.class);
+        String currency = "12345";
+        when(currentUser.getPayeePartyIdTypesList()).thenReturn(new ArrayList<>());
+
+        // Act
+        List<Specifications<TransactionRequest>> result = operationsDetailedApi.checkUserCurrenciesAssigned(currentUser, currency);
 
         // Assert
         assertEquals(1, result.size());
