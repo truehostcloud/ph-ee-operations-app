@@ -11,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specifications;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -54,10 +56,7 @@ class OperationsDetailedApiTest {
     void testTransactionRequestFilter_UserNotAuthenticated() {
         // Arrange
         List<Specifications<TransactionRequest>> specs = Collections.emptyList();
-        String sortedBy = null;
-        String sortedOrder = "ASC";
-        Integer page = 0;
-        Integer size = 10;
+        PageRequest pager = new PageRequest(0, 10, new Sort(Sort.Direction.ASC, "startedAt"));
         String currency = "USD";
         String payeePartyId = "12345";
         String payeePartyIdType = "MNO";
@@ -69,7 +68,7 @@ class OperationsDetailedApiTest {
         SecurityContextHolder.setContext(securityContext);
 
         // Act
-        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, payeePartyIdType);
+        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(pager, specs, currency, payeePartyId, payeePartyIdType);
 
         // Assert
         verifyZeroInteractions(appUserRepository, transactionRequestRepository);
@@ -80,20 +79,18 @@ class OperationsDetailedApiTest {
     @Test
     void testTransactionRequestFilter_UserNotAuthorizedForCurrenciesOrPayeePartyIdsOrPayeePartyIdTypes() {
         List<Specifications<TransactionRequest>> specs = Collections.emptyList();
-        String sortedBy = null;
-        String sortedOrder = "ASC";
-        Integer page = 0;
-        Integer size = 10;
         String currency = "USD";
         String payeePartyId = "12345";
         String payeePartyIdType = "MNO";
+        PageRequest pager = new PageRequest(0, 10, new Sort(Sort.Direction.ASC, "startedAt"));
+
 
         AppUser currentUser = new AppUser(); // User not authorized for anything
         when(appUserRepository.findAppUserByName(any())).thenReturn(currentUser);
 
         setupSecurityContext(currentUser);
         // Act
-         Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, payeePartyIdType);
+        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(pager, specs, currency, payeePartyId, payeePartyIdType);
 
         // Assert
         verify(appUserRepository, times(1)).findAppUserByName(any());

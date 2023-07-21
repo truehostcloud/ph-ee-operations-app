@@ -252,6 +252,16 @@ public class OperationsDetailedApi {
         if (direction != null) {
             specs.add(TransactionRequestSpecs.match(TransactionRequest_.direction, direction));
         }
+        List<Specifications<TransactionRequest>> dateSpecs = checkDates(startFrom, startTo);
+        if (!dateSpecs.isEmpty()) specs.addAll(dateSpecs);
+
+        PageRequest pageRequest = getPager(sortedBy, page, size, sortedOrder);
+
+        return transactionRequestFilter(pageRequest, specs, currency, payeePartyId, payeePartyIdType);
+    }
+
+    private List<Specifications<TransactionRequest>> checkDates(String startFrom, String startTo) {
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
         try {
             if (startFrom != null) {
                 startFrom = dateUtil.getUTCFormat(startFrom);
@@ -269,62 +279,73 @@ public class OperationsDetailedApi {
         } catch (Exception e) {
             logger.warn("failed to parse dates {} / {}", startFrom, startTo);
         }
-
-        return transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, payeePartyIdType);
+        return specs;
     }
 
-    public Page<TransactionRequest> transactionRequestFilter(List<Specifications<TransactionRequest>> specs, String sortedBy, String sortedOrder, Integer page, Integer size, String currency, String payeePartyId, String payeePartyIdType) {
+    private PageRequest getPager(String sortedBy, Integer page, Integer size, String sortedOrder) {
         PageRequest pager;
         if (sortedBy == null || "startedAt".equals(sortedBy)) {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), "startedAt"));
         } else {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), sortedBy));
         }
+        return pager;
+    }
+
+    public Page<TransactionRequest> transactionRequestFilter(PageRequest pager, List<Specifications<TransactionRequest>> specs, String currency, String payeePartyId, String payeePartyIdType) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // Check if the user is authenticated
         if (authentication != null && authentication.isAuthenticated()) {
-            // Get the authenticated user by username
-            AppUser currentUser = appUserRepository.findAppUserByName(authentication.getName());
-            // filter transactions by dukas assigned to the user
-            if (currentUser.getPayeePartyIdsList().isEmpty()) {
-                // user not allowed to see any duka data, return empty page of transactions
-                logger.info("user not allowed to see any duka data");
+            List<Specifications<TransactionRequest>> checks = checkAssignments(authentication, payeePartyId, payeePartyIdType, currency);
+            if (checks.isEmpty()) // empty denotes that there's a missing assignment, thus return an empty page
                 return new PageImpl<>(Collections.emptyList(), pager, 0);
-            } else {
-                List<Specifications<TransactionRequest>> dukaSpecs = checkUserDukasAssigned(currentUser, payeePartyId);
-                if (!dukaSpecs.isEmpty())
-                    specs.addAll(dukaSpecs);
-            }
-
-            // filter transactions by currencies assigned to the user
-            if (currentUser.getCurrenciesList().isEmpty()) {
-                // user not allowed to see any currency data, return empty page of transactions
-                logger.info("user not allowed to see any currency data");
-                return new PageImpl<>(Collections.emptyList(), pager, 0);
-            } else {
-                List<Specifications<TransactionRequest>> currencySpecs = checkUserCurrenciesAssigned(currentUser, currency);
-                if (!currencySpecs.isEmpty())
-                    specs.addAll(currencySpecs);
-            }
-
-            // filter transactions by PayeePartyIdTypes assigned to the user
-            if (currentUser.getPayeePartyIdTypesList().isEmpty()) {
-                // user not allowed to see any PayeePartyIdTypes data, return empty page of transactions
-                logger.info("user not allowed to see any PayeePartyIdTypes data");
-                return new PageImpl<>(Collections.emptyList(), pager, 0);
-            } else {
-                List<Specifications<TransactionRequest>> partyIdTypeSpecs = checkUserPayeePartyIdTypesAssigned(currentUser, payeePartyIdType);
-                if (!partyIdTypeSpecs.isEmpty())
-                    specs.addAll(partyIdTypeSpecs);
-            }
-
+            specs.addAll(checks);
         } else {
             logger.info("authenticated user not found");
             return new PageImpl<>(Collections.emptyList(), pager, 0);
         }
 
         return transactionRequestsResponse(specs, pager);
+    }
+
+    private List<Specifications<TransactionRequest>> checkAssignments(Authentication authentication, String payeePartyId, String payeePartyIdType, String currency) {
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
+        // Get the authenticated user by username
+        AppUser currentUser = appUserRepository.findAppUserByName(authentication.getName());
+        // filter transactions by dukas assigned to the user
+        if (currentUser.getPayeePartyIdsList().isEmpty()) {
+            // user not allowed to see any duka data, return empty page of transactions
+            logger.info("user not allowed to see any duka data");
+            return new ArrayList<>();
+        } else {
+            List<Specifications<TransactionRequest>> dukaSpecs = checkUserDukasAssigned(currentUser, payeePartyId);
+            if (!dukaSpecs.isEmpty())
+                specs.addAll(dukaSpecs);
+        }
+
+        // filter transactions by currencies assigned to the user
+        if (currentUser.getCurrenciesList().isEmpty()) {
+            // user not allowed to see any currency data, return empty page of transactions
+            logger.info("user not allowed to see any currency data");
+            return new ArrayList<>();
+        } else {
+            List<Specifications<TransactionRequest>> currencySpecs = checkUserCurrenciesAssigned(currentUser, currency);
+            if (!currencySpecs.isEmpty())
+                specs.addAll(currencySpecs);
+        }
+
+        // filter transactions by PayeePartyIdTypes assigned to the user
+        if (currentUser.getPayeePartyIdTypesList().isEmpty()) {
+            // user not allowed to see any PayeePartyIdTypes data, return empty page of transactions
+            logger.info("user not allowed to see any PayeePartyIdTypes data");
+            return new ArrayList<>();
+        } else {
+            List<Specifications<TransactionRequest>> partyIdTypeSpecs = checkUserPayeePartyIdTypesAssigned(currentUser, payeePartyIdType);
+            if (!partyIdTypeSpecs.isEmpty())
+                specs.addAll(partyIdTypeSpecs);
+        }
+        return specs;
     }
 
     private Page<TransactionRequest> transactionRequestsResponse(List<Specifications<TransactionRequest>> specs, PageRequest pager) {
