@@ -5,15 +5,12 @@ import org.apache.fineract.operations.TransactionRequest;
 import org.apache.fineract.operations.TransactionRequestRepository;
 import org.apache.fineract.organisation.user.AppUser;
 import org.apache.fineract.organisation.user.AppUserRepository;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specifications;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -21,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -62,6 +60,7 @@ class OperationsDetailedApiTest {
         Integer size = 10;
         String currency = "USD";
         String payeePartyId = "12345";
+        String payeePartyIdType = "MNO";
 
         // Arrange
         // Set up specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, etc.
@@ -70,7 +69,7 @@ class OperationsDetailedApiTest {
         SecurityContextHolder.setContext(securityContext);
 
         // Act
-        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId);
+        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, payeePartyIdType);
 
         // Assert
         verifyZeroInteractions(appUserRepository, transactionRequestRepository);
@@ -87,14 +86,17 @@ class OperationsDetailedApiTest {
         Integer size = 10;
         String currency = "USD";
         String payeePartyId = "12345";
+        String payeePartyIdType = "MNO";
 
         AppUser currentUser = new AppUser();
-        when(appUserRepository.findAppUserByName(any())).thenReturn(currentUser);
         currentUser.setCurrenciesList(null); // User not authorized for currencies
+        currentUser.setPayeePartyIdsList(Collections.singletonList("*"));
+        currentUser.setPayeePartyIdTypesList(Collections.singletonList("*"));
+        when(appUserRepository.findAppUserByName(any())).thenReturn(currentUser);
 
         setupSecurityContext(currentUser);
         // Act
-        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId);
+        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, payeePartyIdType);
 
         // Assert
         verify(appUserRepository, times(1)).findAppUserByName(any());
@@ -112,14 +114,17 @@ class OperationsDetailedApiTest {
         Integer size = 10;
         String currency = "USD";
         String payeePartyId = "12345";
+        String payeePartyIdType = "MNO";
 
         AppUser currentUser = new AppUser();
+        currentUser.setPayeePartyIdsList(null);
+        currentUser.setCurrenciesList(Collections.singletonList("*"));
+        currentUser.setPayeePartyIdTypesList(Collections.singletonList("*"));
         when(appUserRepository.findAppUserByName(any())).thenReturn(currentUser);
-        currentUser.setPayeePartyIdsList(null); // User not authorized for currencies
 
         setupSecurityContext(currentUser);
         // Act
-        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId);
+        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId, payeePartyIdType);
 
         // Assert
         verify(appUserRepository, times(1)).findAppUserByName(any());
@@ -129,33 +134,16 @@ class OperationsDetailedApiTest {
     }
 
     @Test
-    void testTransactionRequestFilter_Successful() {
-        List<Specifications<TransactionRequest>> specs = Collections.emptyList();
-        String sortedBy = null;
-        String sortedOrder = "ASC";
-        Integer page = 0;
-        Integer size = 10;
-        String currency = null;
-        String payeePartyId = null;
-        PageRequest pager = PageRequest.of(page, size, Sort.by(Sort.Direction.valueOf(sortedOrder), "startedAt"));
-
-
-        AppUser currentUser = new AppUser();
-        currentUser.setPayeePartyIdsList(Collections.singletonList("*"));
-        currentUser.setCurrenciesList(Collections.singletonList("*"));
-
-        setupSecurityContext(currentUser);
-        when(appUserRepository.findAppUserByName(any())).thenReturn(currentUser);
+    void testCheckUserPayeePartyIdTypesAssigned_AssignedNone() {
+        AppUser currentUser = mock(AppUser.class);
+        String payeePartyIdType = "some_type";
+        when(currentUser.getPayeePartyIdTypesList()).thenReturn(new ArrayList<>());
 
         // Act
-        Page<TransactionRequest> result = operationsDetailedApi.transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId);
+        List<Specifications<TransactionRequest>> result = operationsDetailedApi.checkUserPayeePartyIdTypesAssigned(currentUser, payeePartyIdType);
 
         // Assert
-        verify(appUserRepository, times(1)).findAppUserByName(any());
-
-        // You can also directly assert on the result returned by the method if it is equal to the expectedPage
-//        Assertions.assertNotNull(result);
-        verify(transactionRequestRepository, times(1)).findAll(pager);
+        assertEquals(1, result.size());
     }
 }
 

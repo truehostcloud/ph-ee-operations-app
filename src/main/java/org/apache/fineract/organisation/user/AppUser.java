@@ -144,17 +144,15 @@ public class AppUser extends AbstractPersistableCustom<Long> implements UserDeta
 
     public List<String> getPayeePartyIdTypesList() {
         if (payeePartyIdTypes != null && !payeePartyIdTypes.isEmpty()) {
-            if (payeePartyIdTypes.equalsIgnoreCase("*"))
-                return new ArrayList<>();
             return Arrays.stream(payeePartyIdTypes.split(","))
                     .collect(Collectors.toList());
         } else {
-            return null;
+            return new ArrayList<>();
         }
     }
 
     public void setPayeePartyIdTypesList(List<String> newPayeePartyIdTypes) {
-        if (payeePartyIdTypes != null && !payeePartyIdTypes.isEmpty()) {
+        if (newPayeePartyIdTypes != null && !newPayeePartyIdTypes.isEmpty()) {
             payeePartyIdTypes = String.join(",", newPayeePartyIdTypes);
         } else {
             payeePartyIdTypes = null;
