@@ -57,6 +57,14 @@ public class OperationsDetailedApi {
     @Autowired
     private AppUserRepository appUserRepository;
 
+    @Autowired
+    private AMSConfig amsConfig;
+
+    @GetMapping("/ams/sources")
+    public List<AMSConfig.AmsSource> getAmsSourcesList() {
+        return amsConfig.getAmsSourcesList();
+    }
+
     @GetMapping("/transfers")
     public Page<TransferResponse> transfers(
             @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
@@ -206,6 +214,7 @@ public class OperationsDetailedApi {
             @RequestParam(value = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(value = "payerPartyId", required = false) String payerPartyId,
             @RequestParam(value = "payeePartyId", required = false) String payeePartyId,
+            @RequestParam(value = "payeePartyIdType", required = false) String payeePartyIdType,
             @RequestParam(value = "payeeDfspId", required = false) String payeeDfspId,
             @RequestParam(value = "payerDfspId", required = false) String payerDfspId,
             @RequestParam(value = "transactionId", required = false) String transactionId,
@@ -243,6 +252,16 @@ public class OperationsDetailedApi {
         if (direction != null) {
             specs.add(TransactionRequestSpecs.match(TransactionRequest_.direction, direction));
         }
+        List<Specifications<TransactionRequest>> dateSpecs = checkDates(startFrom, startTo);
+        if (!dateSpecs.isEmpty()) specs.addAll(dateSpecs);
+
+        PageRequest pageRequest = getPager(sortedBy, page, size, sortedOrder);
+
+        return transactionRequestFilter(pageRequest, specs, currency, payeePartyId, payeePartyIdType);
+    }
+
+    private List<Specifications<TransactionRequest>> checkDates(String startFrom, String startTo) {
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
         try {
             if (startFrom != null) {
                 startFrom = dateUtil.getUTCFormat(startFrom);
@@ -260,45 +279,73 @@ public class OperationsDetailedApi {
         } catch (Exception e) {
             logger.warn("failed to parse dates {} / {}", startFrom, startTo);
         }
-
-        return transactionRequestFilter(specs, sortedBy, sortedOrder, page, size, currency, payeePartyId);
+        return specs;
     }
 
-    public Page<TransactionRequest> transactionRequestFilter(List<Specifications<TransactionRequest>> specs, String sortedBy, String sortedOrder, Integer page, Integer size, String currency, String payeePartyId) {
+    private PageRequest getPager(String sortedBy, Integer page, Integer size, String sortedOrder) {
         PageRequest pager;
         if (sortedBy == null || "startedAt".equals(sortedBy)) {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), "startedAt"));
         } else {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), sortedBy));
         }
+        return pager;
+    }
+
+    public Page<TransactionRequest> transactionRequestFilter(PageRequest pager, List<Specifications<TransactionRequest>> specs, String currency, String payeePartyId, String payeePartyIdType) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // Check if the user is authenticated
         if (authentication != null && authentication.isAuthenticated()) {
-            // Get the authenticated user by username
-            AppUser currentUser = appUserRepository.findAppUserByName(authentication.getName());
-            // filter transactions by dukas assigned to the user
-            if (currentUser.getPayeePartyIdsList().isEmpty()) {
-                // user not allowed to see any duka data, return empty page of transactions
-                logger.info("user not allowed to see any duka data");
+            List<Specifications<TransactionRequest>> checks = checkAssignments(authentication, payeePartyId, payeePartyIdType, currency);
+            if (checks.isEmpty()) // empty denotes that there's a missing assignment, thus return an empty page
                 return new PageImpl<>(Collections.emptyList(), pager, 0);
-            } else
-                checkUserDukasAssigned(currentUser, payeePartyId, specs);
-
-            // filter transactions by currencies assigned to the user
-            if (currentUser.getCurrenciesList().isEmpty()) {
-                // user not allowed to see any currency data, return empty page of transactions
-                logger.info("user not allowed to see any currency data");
-                return new PageImpl<>(Collections.emptyList(), pager, 0);
-            } else
-                checkUserCurrenciesAssigned(currentUser, currency, specs);
-
+            specs.addAll(checks);
         } else {
             logger.info("authenticated user not found");
             return new PageImpl<>(Collections.emptyList(), pager, 0);
         }
 
         return transactionRequestsResponse(specs, pager);
+    }
+
+    private List<Specifications<TransactionRequest>> checkAssignments(Authentication authentication, String payeePartyId, String payeePartyIdType, String currency) {
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
+        // Get the authenticated user by username
+        AppUser currentUser = appUserRepository.findAppUserByName(authentication.getName());
+        // filter transactions by dukas assigned to the user
+        if (currentUser.getPayeePartyIdsList().isEmpty()) {
+            // user not allowed to see any duka data, return empty page of transactions
+            logger.info("user not allowed to see any duka data");
+            return new ArrayList<>();
+        } else {
+            List<Specifications<TransactionRequest>> dukaSpecs = checkUserDukasAssigned(currentUser, payeePartyId);
+            if (!dukaSpecs.isEmpty())
+                specs.addAll(dukaSpecs);
+        }
+
+        // filter transactions by currencies assigned to the user
+        if (currentUser.getCurrenciesList().isEmpty()) {
+            // user not allowed to see any currency data, return empty page of transactions
+            logger.info("user not allowed to see any currency data");
+            return new ArrayList<>();
+        } else {
+            List<Specifications<TransactionRequest>> currencySpecs = checkUserCurrenciesAssigned(currentUser, currency);
+            if (!currencySpecs.isEmpty())
+                specs.addAll(currencySpecs);
+        }
+
+        // filter transactions by PayeePartyIdTypes assigned to the user
+        if (currentUser.getPayeePartyIdTypesList().isEmpty()) {
+            // user not allowed to see any PayeePartyIdTypes data, return empty page of transactions
+            logger.info("user not allowed to see any PayeePartyIdTypes data");
+            return new ArrayList<>();
+        } else {
+            List<Specifications<TransactionRequest>> partyIdTypeSpecs = checkUserPayeePartyIdTypesAssigned(currentUser, payeePartyIdType);
+            if (!partyIdTypeSpecs.isEmpty())
+                specs.addAll(partyIdTypeSpecs);
+        }
+        return specs;
     }
 
     private Page<TransactionRequest> transactionRequestsResponse(List<Specifications<TransactionRequest>> specs, PageRequest pager) {
@@ -313,7 +360,9 @@ public class OperationsDetailedApi {
         }
     }
 
-    private List<Specifications<TransactionRequest>> checkUserCurrenciesAssigned(AppUser currentUser, String currency, List<Specifications<TransactionRequest>> specs) {
+    public List<Specifications<TransactionRequest>> checkUserCurrenciesAssigned(AppUser currentUser, String currency) {
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
+
         if (currentUser.getCurrenciesList().equals(Collections.singletonList("*"))) {
             // user is allowed to see data from all currencies. Check if they wanna filter for a specific currency, otherwise don't add to spec
             if (currency != null) {
@@ -321,7 +370,7 @@ public class OperationsDetailedApi {
             }
         } else {
             // user is assigned currency in the list
-            if (currency != null && currentUser.getCurrenciesList().contains(currency)) {
+            if (currency != null) {
                 specs.add(TransactionRequestSpecs.match(TransactionRequest_.currency, currency));
             } else {
                 specs.add(TransactionRequestSpecs.in(TransactionRequest_.currency, currentUser.getCurrenciesList()));
@@ -331,18 +380,41 @@ public class OperationsDetailedApi {
         return specs;
     }
 
-    private List<Specifications<TransactionRequest>> checkUserDukasAssigned(AppUser currentUser, String payeePartyId, List<Specifications<TransactionRequest>> specs) {
+    public List<Specifications<TransactionRequest>> checkUserDukasAssigned(AppUser currentUser, String payeePartyId) {
+
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
+
         if (currentUser.getPayeePartyIdsList().equals(Collections.singletonList("*"))) {
             // user is allowed to see data from all dukas. Check if they wanna filter for a specific payee, otherwise don't add to spec
-            if (payeePartyId != null && currentUser.getPayeePartyIdsList().contains(payeePartyId)) {
+            if (payeePartyId != null) {
                 specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
             }
         } else {
             // user is assigned dukas in the list
-            if (payeePartyId != null && currentUser.getPayeePartyIdsList().contains(payeePartyId)) {
+            if (payeePartyId != null) {
                 specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
             } else {
                 specs.add(TransactionRequestSpecs.in(TransactionRequest_.payeePartyId, currentUser.getPayeePartyIdsList()));
+            }
+
+        }
+        return specs;
+    }
+
+    public List<Specifications<TransactionRequest>> checkUserPayeePartyIdTypesAssigned(AppUser currentUser, String payeePartyIdType) {
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
+
+        if (currentUser.getPayeePartyIdTypesList().equals(Collections.singletonList("*"))) {
+            // user is allowed to see data from all payeePartyIdTypes. Check if they wanna filter for a specific payee, otherwise don't add to spec
+            if (payeePartyIdType != null) {
+                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
+            }
+        } else {
+            // user is assigned payeePartyIdTypes in the list
+            if (payeePartyIdType != null) {
+                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
+            } else {
+                specs.add(TransactionRequestSpecs.in(TransactionRequest_.payeePartyIdType, currentUser.getPayeePartyIdTypesList()));
             }
 
         }
