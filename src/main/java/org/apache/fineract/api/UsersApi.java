@@ -140,6 +140,19 @@ public class UsersApi {
         }
     }
 
+    @PutMapping(path = "/user/{userId}/payeePartyIdTypes", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public void userPayeePartyIdTypesAssignment(@PathVariable("userId") Long userId,
+                                            @RequestBody List<String> payeePartyIdTypes, HttpServletResponse response) {
+        Optional<AppUser> existingUser = appuserRepository.findById(userId);
+        if (existingUser.isPresent()) {
+            AppUser user = existingUser.get();
+            user.setPayeePartyIdTypesList(payeePartyIdTypes);
+            appuserRepository.saveAndFlush(user);
+        } else {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        }
+    }
+
 
     @PutMapping(path = "/user/{userId}/roles", consumes = MediaType.APPLICATION_JSON_VALUE)
     public void userAssignment(@PathVariable("userId") Long userId, @RequestParam("action") AssignmentAction action,
