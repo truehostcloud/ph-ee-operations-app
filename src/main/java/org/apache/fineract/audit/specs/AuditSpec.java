@@ -1,6 +1,8 @@
-package org.apache.fineract.audit;
+package org.apache.fineract.audit.specs;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.audit.data.AuditSearch;
+import org.apache.fineract.audit.data.AuditSource;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
@@ -27,14 +29,20 @@ public class AuditSpec extends BaseSpecification<AuditSource, AuditSearch> {
         };
     }
 
-    private Specification<AuditSource> dateBetween(String field, Date start, Date end) {
-        return (root, query, cb)
-                -> cb.between(root.get(field), start, end);
+    public static Date getExactDate(Date date, int hour, int minute, int seconds) {
+        if (date == null)
+            return null;
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR, hour);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, seconds);
+        return calendar.getTime();
     }
 
     private Specification<AuditSource> fieldContains(String attribute, String value) {
         return (root, query, cb) -> {
-            if (cb == null) {
+            if (value == null) {
                 return null;
             }
             return cb.like(
@@ -46,19 +54,20 @@ public class AuditSpec extends BaseSpecification<AuditSource, AuditSearch> {
 
     private Specification<AuditSource> fieldContains(String attribute, Long value) {
         return (root, query, cb) -> {
-            if (cb == null) {
+            if (value == null) {
                 return null;
             }
             return cb.equal(root.get(attribute), value);
         };
     }
 
-    public static Date getExactDate(Date endDate, int hour, int minute, int seconds) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(endDate);
-        calendar.set(Calendar.HOUR,hour);
-        calendar.set(Calendar.MINUTE,minute);
-        calendar.set(Calendar.SECOND,seconds);
-        return calendar.getTime();
+    private Specification<AuditSource> dateBetween(String field, Date start, Date end) {
+        return (root, query, cb)
+                -> {
+            if (start == null) {
+                return null;
+            }
+            return cb.between(root.get(field), start, end);
+        };
     }
 }

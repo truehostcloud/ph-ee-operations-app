@@ -1,5 +1,7 @@
-package org.apache.fineract.audit;
+package org.apache.fineract.audit.service;
 
+import org.apache.fineract.audit.data.AuditSource;
+import org.apache.fineract.audit.events.NewAuditEvent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;

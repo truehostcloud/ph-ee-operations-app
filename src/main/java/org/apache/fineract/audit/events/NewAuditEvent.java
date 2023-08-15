@@ -1,4 +1,4 @@
-package org.apache.fineract.audit;
+package org.apache.fineract.audit.events;
 
 import lombok.Getter;
 import org.apache.fineract.organisation.user.AppUser;

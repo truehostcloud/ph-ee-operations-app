@@ -1,13 +1,12 @@
-package org.apache.fineract.audit;
+package org.apache.fineract.audit.events;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.audit.service.AuditService;
+import org.apache.fineract.audit.data.AuditSource;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
-import java.util.Date;
 
 @Component
 @Slf4j

@@ -1,4 +1,4 @@
-package org.apache.fineract.audit;
+package org.apache.fineract.audit.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

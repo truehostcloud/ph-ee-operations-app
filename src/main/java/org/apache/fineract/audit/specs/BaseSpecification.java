@@ -1,4 +1,4 @@
-package org.apache.fineract.audit;
+package org.apache.fineract.audit.specs;
 
 import org.springframework.data.jpa.domain.Specification;
 

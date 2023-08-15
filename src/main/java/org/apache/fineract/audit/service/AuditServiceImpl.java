@@ -1,6 +1,9 @@
-package org.apache.fineract.audit;
+package org.apache.fineract.audit.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.audit.data.AuditSource;
+import org.apache.fineract.audit.data.AuditSourceRepository;
+import org.apache.fineract.audit.events.NewAuditEvent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -32,6 +35,6 @@ public class AuditServiceImpl implements AuditService{
 
     @Override
     public Page<AuditSource> getAudits(Specification<AuditSource> specification, Pageable pageable) {
-        return null;
+        return auditSourceRepository.findAll(specification, pageable);
     }
 }

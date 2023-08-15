@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.audit;
+package org.apache.fineract.audit.data;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
