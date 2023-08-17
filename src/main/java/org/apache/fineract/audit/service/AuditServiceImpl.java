@@ -4,8 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.audit.data.AuditSource;
 import org.apache.fineract.audit.data.AuditSourceRepository;
 import org.apache.fineract.audit.events.NewAuditEvent;
-import org.apache.fineract.utils.DateUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -17,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuditServiceImpl implements AuditService {
     private final AuditSourceRepository auditSourceRepository;
 
-    @Autowired
-    private DateUtil dateUtil;
 
     public AuditServiceImpl(AuditSourceRepository auditSourceRepository) {
         this.auditSourceRepository = auditSourceRepository;
@@ -33,7 +29,7 @@ public class AuditServiceImpl implements AuditService {
         audit.setActionName(event.getActionName());
         audit.setDataAsJson(event.getDataAsJson());
         audit.setProcessingResult(event.getProcessingResult());
-        audit.setMadeOnDate(dateUtil.getLocalDateTimeOfTenant());
+        audit.setMadeOnDate(event.getMadeOnDate());
         audit.setMaker(event.getMaker());
         return auditSourceRepository.save(audit);
     }
