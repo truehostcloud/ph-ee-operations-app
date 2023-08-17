@@ -4,6 +4,9 @@ import lombok.Getter;
 import org.apache.fineract.organisation.user.AppUser;
 import org.springframework.context.ApplicationEvent;
 
+/**
+ * Audit event data class mapping data for an async audit event.
+ */
 @Getter
 public class NewAuditEvent extends ApplicationEvent {
     private final Integer resourceId;

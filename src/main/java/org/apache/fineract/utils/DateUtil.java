@@ -26,4 +26,8 @@ public class DateUtil {
         String gmtDateTimeString = gmtDateTime.format(gmtFormatter);
         return gmtDateTimeString;
     }
+
+    public LocalDateTime getLocalDateTimeOfTenant() {
+        return LocalDateTime.now(ZoneId.of(interfaceTimezone));
+    }
 }

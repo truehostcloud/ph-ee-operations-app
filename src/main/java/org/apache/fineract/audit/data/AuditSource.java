@@ -8,8 +8,11 @@ import org.apache.fineract.organisation.parent.AbstractPersistableCustom;
 import org.apache.fineract.organisation.user.AppUser;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
+/**
+ * Entity data class for audit entries.
+ */
 @Entity
 @Table(name = "m_audit_source")
 @Getter
@@ -34,8 +37,7 @@ public class AuditSource extends AbstractPersistableCustom<Long> {
     private AppUser maker;
 
     @Column(name = "made_on_date", nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date madeOnDate;
+    private LocalDateTime madeOnDate;
 
     @Column(name = "processing_result", nullable = false)
     private String processingResult;

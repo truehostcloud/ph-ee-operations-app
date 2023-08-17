@@ -34,7 +34,7 @@ public class AuditApiResource {
     }
 
     @GetMapping
-    @Operation(summary = "List Audits", description = "Get a 200 list of audits that match the criteria supplied and sorted by audit id in descending order, and are within the requestors' data scope. Also it supports pagination and sorting\n" + "\n" + "Example Request:\n" + "\n" + "audits\n" + "\n" + "audits?actionName=UPDATE&entityName=AppUser\n")
+    @Operation(summary = "List Audits", description = "Get a list of audits that match the criteria supplied and sorted by audit id in descending order, and are within the requestors' data scope. Also it supports pagination and sorting\n" + "\n" + "Example Request:\n" + "\n" + "audits\n" + "\n" + "audits?actionName=UPDATE&entityName=AppUser\n")
     public Page<AuditSource> retrieveAuditEntries(@QueryParam("actionName") @Parameter(description = "actionName") final String actionName,
                                                   @QueryParam("entityName") @Parameter(description = "entityName") final String entityName,
                                                   @QueryParam("resourceId") @Parameter(description = "resourceId") final Long resourceId,

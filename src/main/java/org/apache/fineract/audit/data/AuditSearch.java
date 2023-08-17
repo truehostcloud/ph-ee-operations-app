@@ -5,6 +5,9 @@ import lombok.Getter;
 
 import java.util.Date;
 
+/**
+ * Data class containing search criteria for audit entries.
+ */
 @Getter
 @AllArgsConstructor
 public class AuditSearch {
