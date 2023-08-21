@@ -25,7 +25,7 @@ import java.util.Date;
 @RestController
 @SecurityRequirement(name = "auth")
 @RequestMapping("/api/v1/audit")
-@Tag(name = "Users API")
+@Tag(name = "Audit API")
 public class AuditApiResource {
     private AuditService auditService;
 

@@ -25,7 +25,7 @@ public class AuditServiceImpl implements AuditService {
     public AuditSource createNewEntry(NewAuditEvent event) {
         AuditSource audit = new AuditSource();
         audit.setEntityName(event.getEntityName());
-        audit.setResourceId(audit.getResourceId());
+        audit.setResourceId(event.getResourceId().longValue());
         audit.setActionName(event.getActionName());
         audit.setDataAsJson(event.getDataAsJson());
         audit.setProcessingResult(event.getProcessingResult());
