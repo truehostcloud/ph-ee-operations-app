@@ -32,7 +32,7 @@ class UsersApiTest {
     }
 
     @Test
-    public void testDeactivateUser() {
+    void testDeactivateUser() {
         // Create a sample AppUser
         AppUser sampleUser = new AppUser();
         sampleUser.setId(1L);
@@ -53,7 +53,7 @@ class UsersApiTest {
     }
 
     @Test
-    public void testActivateUser() {
+    void testActivateUser() {
         // Create a sample AppUser
         AppUser sampleUser = new AppUser();
         sampleUser.setId(1L);
@@ -74,7 +74,7 @@ class UsersApiTest {
     }
 
     @Test
-    public void testActivateUserNotFound() {
+    void testActivateUserNotFound() {
         // Mock the behavior of appUserRepository.findById to return an empty Optional
         when(appUserRepository.findById(1L)).thenReturn(Optional.empty());
 

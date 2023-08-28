@@ -187,8 +187,10 @@ public class UsersApi {
 
     @PutMapping(path = "/user/{userId}/roles", consumes = MediaType.APPLICATION_JSON_VALUE)
     public void userAssignment(@PathVariable("userId") Long userId, @RequestParam("action") AssignmentAction action, @RequestBody EntityAssignments assignments, HttpServletResponse response) {
-        AppUser existingUser = appuserRepository.findById(userId).get();
-        if (existingUser != null) {
+        AppUser existingUser;
+        Optional<AppUser> existingUser1 = appuserRepository.findById(userId);
+        if (existingUser1.isPresent()) {
+            existingUser = existingUser1.get();
             Collection<Role> rolesToAssign = existingUser.getRoles();
             List<Long> existingRoleIds = rolesToAssign.stream().map(Role::getId).collect(toList());
             List<Role> deltaRoles = assignments.getEntityIds().stream().filter(id -> {
@@ -206,17 +208,21 @@ public class UsersApi {
                 }
             }).collect(toList());
 
-            if (!deltaRoles.isEmpty()) {
-                if (ASSIGN.equals(action)) {
-                    rolesToAssign.addAll(deltaRoles);
-                } else { // revoke
-                    rolesToAssign.removeAll(deltaRoles);
-                }
-                existingUser.setRoles(rolesToAssign);
-                appuserRepository.saveAndFlush(existingUser);
-            }
+            saveChanges(action, deltaRoles, rolesToAssign, existingUser);
         } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        }
+    }
+
+    private void saveChanges(AssignmentAction action, List<Role> deltaRoles, Collection<Role> rolesToAssign, AppUser existingUser) {
+        if (!deltaRoles.isEmpty()) {
+            if (ASSIGN.equals(action)) {
+                rolesToAssign.addAll(deltaRoles);
+            } else { // revoke
+                rolesToAssign.removeAll(deltaRoles);
+            }
+            existingUser.setRoles(rolesToAssign);
+            appuserRepository.saveAndFlush(existingUser);
         }
     }
 }
