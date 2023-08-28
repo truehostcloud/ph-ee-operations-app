@@ -115,25 +115,27 @@ public class UsersApi {
     }
 
     @PostMapping(path = "/user/{userId}/deactivate", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public void deactivate(@PathVariable("userId") Long userId, HttpServletResponse response) {
-        AppUser existing = appuserRepository.findById(userId).get();
-        if (existing != null && existing.isEnabled()) {
-            existing.setEnabled(false);
-            appuserRepository.saveAndFlush(existing);
+    public AppUser deactivate(@PathVariable("userId") Long userId, HttpServletResponse response) {
+        Optional<AppUser> existing = appuserRepository.findById(userId);
+        if (existing.isPresent() && existing.get().isEnabled()) {
+            existing.get().setEnabled(false);
+            return appuserRepository.saveAndFlush(existing.get());
         } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
+        return null;
     }
 
     @PostMapping(path = "/user/{userId}/activate", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public void activate(@PathVariable("userId") Long userId, HttpServletResponse response) {
-        AppUser existing = appuserRepository.findById(userId).get();
-        if (existing != null && !existing.isEnabled()) {
-            existing.setEnabled(true);
-            appuserRepository.saveAndFlush(existing);
+    public AppUser activate(@PathVariable("userId") Long userId, HttpServletResponse response) {
+        Optional<AppUser> existing = appuserRepository.findById(userId);
+        if (existing.isPresent() && !existing.get().isEnabled()) {
+            existing.get().setEnabled(true);
+            return appuserRepository.saveAndFlush(existing.get());
         } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
+        return null;
     }
 
 

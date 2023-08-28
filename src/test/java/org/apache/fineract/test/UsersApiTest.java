@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 class UsersApiTest {
@@ -28,6 +29,60 @@ class UsersApiTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void testDeactivateUser() {
+        // Create a sample AppUser
+        AppUser sampleUser = new AppUser();
+        sampleUser.setId(1L);
+        sampleUser.setEnabled(true);
+        // Create a separate instance for disabledUser
+        AppUser disabledUser = new AppUser();
+        disabledUser.setId(1L);
+        disabledUser.setEnabled(false);
+
+        // Mock the behavior of appUserRepository.findById
+        when(appUserRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(appUserRepository.saveAndFlush(any(AppUser.class))).thenReturn(disabledUser);
+
+        // Invoke the method
+        AppUser user = usersApi.deactivate(1L, mock(HttpServletResponse.class));
+        verify(appUserRepository, times(1)).saveAndFlush(disabledUser);
+        assertFalse(user.isEnabled());
+    }
+
+    @Test
+    public void testActivateUser() {
+        // Create a sample AppUser
+        AppUser sampleUser = new AppUser();
+        sampleUser.setId(1L);
+        sampleUser.setEnabled(false);
+        // Create a separate instance for disabledUser
+        AppUser enabledUser = new AppUser();
+        enabledUser.setId(1L);
+        enabledUser.setEnabled(true);
+
+        // Mock the behavior of appUserRepository.findById
+        when(appUserRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(appUserRepository.saveAndFlush(any(AppUser.class))).thenReturn(enabledUser);
+
+        // Invoke the method
+        AppUser user = usersApi.activate(1L, mock(HttpServletResponse.class));
+        verify(appUserRepository, times(1)).saveAndFlush(enabledUser);
+        assertEquals(user.isEnabled(), enabledUser.isEnabled());
+    }
+
+    @Test
+    public void testActivateUserNotFound() {
+        // Mock the behavior of appUserRepository.findById to return an empty Optional
+        when(appUserRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // Invoke the method
+        AppUser activatedUser = usersApi.activate(1L, mock(HttpServletResponse.class));
+
+        // Assertions
+        assertNull(activatedUser);
     }
 
     @Test
