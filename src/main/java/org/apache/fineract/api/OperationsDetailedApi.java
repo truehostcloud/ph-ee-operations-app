@@ -66,25 +66,7 @@ public class OperationsDetailedApi {
     }
 
     @GetMapping("/transfers")
-    public Page<TransferResponse> transfers(
-            @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
-            @RequestParam(value = "size", required = false, defaultValue = "1") Integer size,
-            @RequestParam(value = "payerPartyId", required = false) String payerPartyId,
-            @RequestParam(value = "payerDfspId", required = false) String payerDfspId,
-            @RequestParam(value = "payeePartyId", required = false) String payeePartyId,
-            @RequestParam(value = "payeeDfspId", required = false) String payeeDfspId,
-            @RequestParam(value = "transactionId", required = false) String transactionId,
-            @RequestParam(value = "status", required = false) String status,
-            @RequestParam(value = "amount", required = false) BigDecimal amount,
-            @RequestParam(value = "currency", required = false) String currency,
-            @RequestParam(value = "startFrom", required = false) String startFrom,
-            @RequestParam(value = "startTo", required = false) String startTo,
-            @RequestParam(value = "direction", required = false) String direction,
-            @RequestParam(value = "sortedBy", required = false) String sortedBy,
-            @RequestParam(value = "partyId", required = false) String partyId,
-            @RequestParam(value = "partyIdType", required = false) String partyIdType,
-            @RequestParam(value = "clientCorrelationId", required = false) String clientCorrelationId,
-            @RequestParam(value = "sortedOrder", required = false, defaultValue = "DESC") String sortedOrder) {
+    public Page<TransferResponse> transfers(@RequestParam(value = "page", required = false, defaultValue = "0") Integer page, @RequestParam(value = "size", required = false, defaultValue = "1") Integer size, @RequestParam(value = "payerPartyId", required = false) String payerPartyId, @RequestParam(value = "payerDfspId", required = false) String payerDfspId, @RequestParam(value = "payeePartyId", required = false) String payeePartyId, @RequestParam(value = "payeeDfspId", required = false) String payeeDfspId, @RequestParam(value = "transactionId", required = false) String transactionId, @RequestParam(value = "status", required = false) String status, @RequestParam(value = "amount", required = false) BigDecimal amount, @RequestParam(value = "currency", required = false) String currency, @RequestParam(value = "startFrom", required = false) String startFrom, @RequestParam(value = "startTo", required = false) String startTo, @RequestParam(value = "direction", required = false) String direction, @RequestParam(value = "sortedBy", required = false) String sortedBy, @RequestParam(value = "partyId", required = false) String partyId, @RequestParam(value = "partyIdType", required = false) String partyIdType, @RequestParam(value = "clientCorrelationId", required = false) String clientCorrelationId, @RequestParam(value = "sortedOrder", required = false, defaultValue = "DESC") String sortedOrder) {
         List<Specifications<Transfer>> specs = new ArrayList<>();
 
         if (payerPartyId != null) {
@@ -166,7 +148,7 @@ public class OperationsDetailedApi {
         }
 
         PageRequest pager;
-        if (sortedBy == null || "startedAt".equals(sortedBy)) {
+        if (sortedBy == null || "startedAt" .equals(sortedBy)) {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.fromString(sortedOrder), "startedAt"));
         } else {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.fromString(sortedOrder), sortedBy));
@@ -180,18 +162,17 @@ public class OperationsDetailedApi {
             }
             transferPage = transferRepository.findAll(compiledSpecs, pager);
         } else {
-            transferPage =  transferRepository.findAll(pager);
+            transferPage = transferRepository.findAll(pager);
         }
 
         List<TransferResponse> transferResponseList = new ArrayList<>();
         int i = 0;
-        for (Transfer transfer: transferPage.getContent()) {
+        for (Transfer transfer : transferPage.getContent()) {
             TransferResponse transferResponse = null;
             try {
                 String json = transfer.getErrorInformation();
                 transfer.setErrorInformation(null);
-                transferResponse = objectMapper.readValue(objectMapper.writeValueAsString(transfer),
-                        TransferResponse.class);
+                transferResponse = objectMapper.readValue(objectMapper.writeValueAsString(transfer), TransferResponse.class);
                 transferResponse.parseErrorInformation(json, objectMapper);
                 transferResponseList.add(transferResponse);
             } catch (Exception e) {
@@ -209,24 +190,7 @@ public class OperationsDetailedApi {
     }
 
     @GetMapping("/transactionRequests")
-    public Page<TransactionRequest> transactionRequests(
-            @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
-            @RequestParam(value = "size", required = false, defaultValue = "20") Integer size,
-            @RequestParam(value = "payerPartyId", required = false) String payerPartyId,
-            @RequestParam(value = "payeePartyId", required = false) String payeePartyId,
-            @RequestParam(value = "payeePartyIdType", required = false) String payeePartyIdType,
-            @RequestParam(value = "payeeDfspId", required = false) String payeeDfspId,
-            @RequestParam(value = "payerDfspId", required = false) String payerDfspId,
-            @RequestParam(value = "transactionId", required = false) String transactionId,
-            @RequestParam(value = "state", required = false) String state,
-            @RequestParam(value = "amount", required = false) BigDecimal amount,
-            @RequestParam(value = "currency", required = false) String currency,
-            @RequestParam(value = "startFrom", required = false) String startFrom,
-            @RequestParam(value = "startTo", required = false) String startTo,
-            @RequestParam(value = "direction", required = false) String direction,
-            @RequestParam(value = "clientCorrelationId", required = false) String clientCorrelationId,
-            @RequestParam(value = "sortedBy", required = false) String sortedBy,
-            @RequestParam(value = "sortedOrder", required = false, defaultValue = "DESC") String sortedOrder) {
+    public Page<TransactionRequest> transactionRequests(@RequestParam(value = "page", required = false, defaultValue = "0") Integer page, @RequestParam(value = "size", required = false, defaultValue = "20") Integer size, @RequestParam(value = "payerPartyId", required = false) String payerPartyId, @RequestParam(value = "payeePartyId", required = false) String payeePartyId, @RequestParam(value = "payeePartyIdType", required = false) String payeePartyIdType, @RequestParam(value = "payeeDfspId", required = false) String payeeDfspId, @RequestParam(value = "payerDfspId", required = false) String payerDfspId, @RequestParam(value = "transactionId", required = false) String transactionId, @RequestParam(value = "state", required = false) String state, @RequestParam(value = "amount", required = false) BigDecimal amount, @RequestParam(value = "currency", required = false) String currency, @RequestParam(value = "startFrom", required = false) String startFrom, @RequestParam(value = "startTo", required = false) String startTo, @RequestParam(value = "direction", required = false) String direction, @RequestParam(value = "clientCorrelationId", required = false) String clientCorrelationId, @RequestParam(value = "sortedBy", required = false) String sortedBy, @RequestParam(value = "sortedOrder", required = false, defaultValue = "DESC") String sortedOrder) {
         List<Specifications<TransactionRequest>> specs = new ArrayList<>();
         if (payerPartyId != null) {
             specs.add(TransactionRequestSpecs.match(TransactionRequest_.payerPartyId, payerPartyId));
@@ -284,7 +248,7 @@ public class OperationsDetailedApi {
 
     private PageRequest getPager(String sortedBy, Integer page, Integer size, String sortedOrder) {
         PageRequest pager;
-        if (sortedBy == null || "startedAt".equals(sortedBy)) {
+        if (sortedBy == null || "startedAt" .equals(sortedBy)) {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), "startedAt"));
         } else {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), sortedBy));
@@ -297,10 +261,7 @@ public class OperationsDetailedApi {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // Check if the user is authenticated
         if (authentication != null && authentication.isAuthenticated()) {
-            List<Specifications<TransactionRequest>> checks = checkAssignments(authentication, payeePartyId, payeePartyIdType, currency);
-            if (checks.isEmpty()) // empty denotes that there's a missing assignment, thus return an empty page
-                return new PageImpl<>(Collections.emptyList(), pager, 0);
-            specs.addAll(checks);
+            specs.addAll(checkAssignments(authentication, payeePartyId, payeePartyIdType, currency));
         } else {
             logger.info("authenticated user not found");
             return new PageImpl<>(Collections.emptyList(), pager, 0);
@@ -314,10 +275,16 @@ public class OperationsDetailedApi {
         // Get the authenticated user by username
         AppUser currentUser = appUserRepository.findAppUserByName(authentication.getName());
         // filter transactions by dukas assigned to the user
+        logger.info(currentUser.getFirstname());
         if (currentUser.getPayeePartyIdsList().isEmpty()) {
             // user not allowed to see any duka data, return empty page of transactions
             logger.info("user not allowed to see any duka data");
             return new ArrayList<>();
+        } else if (currentUser.getPayeePartyIdsList().equals(Collections.singletonList("*"))) {
+            // user is allowed to see data from all dukas. Check if they wanna filter for a specific payee, otherwise don't add to spec
+            if (payeePartyId != null) {
+                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
+            }
         } else {
             List<Specifications<TransactionRequest>> dukaSpecs = checkUserDukasAssigned(currentUser, payeePartyId);
             if (!dukaSpecs.isEmpty())
@@ -329,6 +296,11 @@ public class OperationsDetailedApi {
             // user not allowed to see any currency data, return empty page of transactions
             logger.info("user not allowed to see any currency data");
             return new ArrayList<>();
+        } else if (currentUser.getCurrenciesList().equals(Collections.singletonList("*"))) {
+            // user is allowed to see data from all currencies. Check if they wanna filter for a specific currency, otherwise don't add to spec
+            if (currency != null) {
+                specs.add(TransactionRequestSpecs.match(TransactionRequest_.currency, currency));
+            }
         } else {
             List<Specifications<TransactionRequest>> currencySpecs = checkUserCurrenciesAssigned(currentUser, currency);
             if (!currencySpecs.isEmpty())
@@ -340,6 +312,11 @@ public class OperationsDetailedApi {
             // user not allowed to see any PayeePartyIdTypes data, return empty page of transactions
             logger.info("user not allowed to see any PayeePartyIdTypes data");
             return new ArrayList<>();
+        } else if (currentUser.getPayeePartyIdTypesList().equals(Collections.singletonList("*"))) {
+            // user is allowed to see data from all payeePartyIdTypes. Check if they wanna filter for a specific payee, otherwise don't add to spec
+            if (payeePartyIdType != null) {
+                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
+            }
         } else {
             List<Specifications<TransactionRequest>> partyIdTypeSpecs = checkUserPayeePartyIdTypesAssigned(currentUser, payeePartyIdType);
             if (!partyIdTypeSpecs.isEmpty())
@@ -363,40 +340,25 @@ public class OperationsDetailedApi {
     public List<Specifications<TransactionRequest>> checkUserCurrenciesAssigned(AppUser currentUser, String currency) {
         List<Specifications<TransactionRequest>> specs = new ArrayList<>();
 
-        if (currentUser.getCurrenciesList().equals(Collections.singletonList("*"))) {
-            // user is allowed to see data from all currencies. Check if they wanna filter for a specific currency, otherwise don't add to spec
-            if (currency != null) {
-                specs.add(TransactionRequestSpecs.match(TransactionRequest_.currency, currency));
-            }
-        } else {
-            // user is assigned currency in the list
-            if (currency != null) {
-                specs.add(TransactionRequestSpecs.match(TransactionRequest_.currency, currency));
-            } else {
-                specs.add(TransactionRequestSpecs.in(TransactionRequest_.currency, currentUser.getCurrenciesList()));
-            }
 
+        // user is assigned currency in the list
+        if (currency != null) {
+            specs.add(TransactionRequestSpecs.match(TransactionRequest_.currency, currency));
+        } else {
+            specs.add(TransactionRequestSpecs.in(TransactionRequest_.currency, currentUser.getCurrenciesList()));
         }
+
         return specs;
     }
 
     public List<Specifications<TransactionRequest>> checkUserDukasAssigned(AppUser currentUser, String payeePartyId) {
 
         List<Specifications<TransactionRequest>> specs = new ArrayList<>();
-
-        if (currentUser.getPayeePartyIdsList().equals(Collections.singletonList("*"))) {
-            // user is allowed to see data from all dukas. Check if they wanna filter for a specific payee, otherwise don't add to spec
-            if (payeePartyId != null) {
-                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
-            }
+        // user is assigned dukas in the list
+        if (payeePartyId != null) {
+            specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
         } else {
-            // user is assigned dukas in the list
-            if (payeePartyId != null) {
-                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
-            } else {
-                specs.add(TransactionRequestSpecs.in(TransactionRequest_.payeePartyId, currentUser.getPayeePartyIdsList()));
-            }
-
+            specs.add(TransactionRequestSpecs.in(TransactionRequest_.payeePartyId, currentUser.getPayeePartyIdsList()));
         }
         return specs;
     }
@@ -404,20 +366,14 @@ public class OperationsDetailedApi {
     public List<Specifications<TransactionRequest>> checkUserPayeePartyIdTypesAssigned(AppUser currentUser, String payeePartyIdType) {
         List<Specifications<TransactionRequest>> specs = new ArrayList<>();
 
-        if (currentUser.getPayeePartyIdTypesList().equals(Collections.singletonList("*"))) {
-            // user is allowed to see data from all payeePartyIdTypes. Check if they wanna filter for a specific payee, otherwise don't add to spec
-            if (payeePartyIdType != null) {
-                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
-            }
+        // user is assigned payeePartyIdTypes in the list
+        if (payeePartyIdType != null) {
+            specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
         } else {
-            // user is assigned payeePartyIdTypes in the list
-            if (payeePartyIdType != null) {
-                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
-            } else {
-                specs.add(TransactionRequestSpecs.in(TransactionRequest_.payeePartyIdType, currentUser.getPayeePartyIdTypesList()));
-            }
-
+            specs.add(TransactionRequestSpecs.in(TransactionRequest_.payeePartyIdType, currentUser.getPayeePartyIdTypesList()));
         }
+
+
         return specs;
     }
 
@@ -433,22 +389,10 @@ public class OperationsDetailedApi {
      * @param state       filter based on state of the transaction
      */
     @PostMapping("/transactionRequests")
-    public Map<String, String> filterTransactionRequests(
-            HttpServletResponse response,
-            @RequestParam(value = "command", required = false, defaultValue = "export") String command,
-            @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
-            @RequestParam(value = "size", required = false, defaultValue = "10000") Integer size,
-            @RequestParam(value = "sortedOrder", required = false, defaultValue = "DESC") String sortedOrder,
-            @RequestParam(value = "startFrom", required = false) String startFrom,
-            @RequestParam(value = "startTo", required = false) String startTo,
-            @RequestParam(value = "state", required = false) String state,
-            @RequestBody Map<String, List<String>> body) {
+    public Map<String, String> filterTransactionRequests(HttpServletResponse response, @RequestParam(value = "command", required = false, defaultValue = "export") String command, @RequestParam(value = "page", required = false, defaultValue = "0") Integer page, @RequestParam(value = "size", required = false, defaultValue = "10000") Integer size, @RequestParam(value = "sortedOrder", required = false, defaultValue = "DESC") String sortedOrder, @RequestParam(value = "startFrom", required = false) String startFrom, @RequestParam(value = "startTo", required = false) String startTo, @RequestParam(value = "state", required = false) String state, @RequestBody Map<String, List<String>> body) {
 
-        if(!command.equalsIgnoreCase("export")) {
-            return new ErrorResponse.Builder()
-                    .setErrorCode(""+HttpServletResponse.SC_NOT_FOUND)
-                    .setErrorDescription(command + " not supported")
-                    .setDeveloperMessage("Possible supported command is " + command).build();
+        if (!command.equalsIgnoreCase("export")) {
+            return new ErrorResponse.Builder().setErrorCode("" + HttpServletResponse.SC_NOT_FOUND).setErrorDescription(command + " not supported").setDeveloperMessage("Possible supported command is " + command).build();
         }
 
         List<String> filterByList = new ArrayList<>(body.keySet());
@@ -493,18 +437,12 @@ public class OperationsDetailedApi {
         }
         if (data.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return new ErrorResponse.Builder()
-                    .setErrorCode(""+HttpServletResponse.SC_NOT_FOUND)
-                    .setErrorDescription("Empty response")
-                    .setDeveloperMessage("Empty response").build();
+            return new ErrorResponse.Builder().setErrorCode("" + HttpServletResponse.SC_NOT_FOUND).setErrorDescription("Empty response").setDeveloperMessage("Empty response").build();
         }
         try {
             CsvUtility.writeToCsv(response, data);
         } catch (WriteToCsvException e) {
-            return new ErrorResponse.Builder()
-                    .setErrorCode(e.getErrorCode())
-                    .setErrorDescription(e.getErrorDescription())
-                    .setDeveloperMessage(e.getDeveloperMessage()).build();
+            return new ErrorResponse.Builder().setErrorCode(e.getErrorCode()).setErrorDescription(e.getErrorDescription()).setDeveloperMessage(e.getDeveloperMessage()).build();
         }
         return null;
     }
@@ -571,9 +509,7 @@ public class OperationsDetailedApi {
      * @param size the size of single page or number of elements in single page
      * @param sortedOrder the order of sorting to be applied ASC OR DESC
      */
-    private Page<TransactionRequest> executeRequest(
-            Specifications<TransactionRequest> baseSpec, List<Specifications<TransactionRequest>> extraSpecs,
-            int page, int size, String sortedOrder) {
+    private Page<TransactionRequest> executeRequest(Specifications<TransactionRequest> baseSpec, List<Specifications<TransactionRequest>> extraSpecs, int page, int size, String sortedOrder) {
         PageRequest pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), "startedAt"));
         Page<TransactionRequest> result;
         if (baseSpec == null) {
@@ -591,8 +527,7 @@ public class OperationsDetailedApi {
      * @param baseSpec the base specification in which all the other spec needed to be merged
      * @param specs the list of specification which is required to be merged in [baseSpec]
      */
-    private <T> Specifications<T> combineSpecs(Specifications<T> baseSpec,
-                                                            List<Specifications<T>> specs) {
+    private <T> Specifications<T> combineSpecs(Specifications<T> baseSpec, List<Specifications<T>> specs) {
         logger.info("Combining specs " + specs.size());
         for (Specifications<T> specifications : specs) {
             baseSpec = baseSpec.and(specifications);
@@ -623,8 +558,7 @@ public class OperationsDetailedApi {
     /*
      * Parses the [TransferStatus] enum from transactionStatus string
      */
-    private TransferStatus parseStatus(@RequestParam(value = "transactionStatus", required = false) String
-                                               transactionStatus) {
+    private TransferStatus parseStatus(@RequestParam(value = "transactionStatus", required = false) String transactionStatus) {
         try {
             return transactionStatus == null ? null : TransferStatus.valueOf(transactionStatus);
         } catch (Exception e) {
