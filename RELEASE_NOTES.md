@@ -8,4 +8,6 @@ Release Notes
             * [SER-1646] - Filter incoming transactions by user's assigned payeePartyIdTypes
         * Deployment
             * [SER-1875] - Add pipeline deployment file for Azure
+        * User Management
+            * [SER-1656] - Activate and deactivate users
             
