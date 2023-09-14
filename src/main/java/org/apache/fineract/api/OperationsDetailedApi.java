@@ -26,10 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.apache.fineract.core.service.OperatorUtils.dateFormat;
 
@@ -73,9 +70,9 @@ public class OperationsDetailedApi {
             if (payerPartyId.contains("%2B")) {
                 try {
                     payerPartyId = URLDecoder.decode(payerPartyId, "UTF-8");
-                    logger.info("Decoded payerPartyId: " + payerPartyId);
+                    logger.info("Decoded payerPartyId: {}", payerPartyId);
                 } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                    logger.info(e.getLocalizedMessage());
                 }
             }
             specs.add(TransferSpecs.match(Transfer_.payerPartyId, payerPartyId));
@@ -84,9 +81,9 @@ public class OperationsDetailedApi {
             if (payeePartyId.contains("%2B")) {
                 try {
                     payeePartyId = URLDecoder.decode(payeePartyId, "UTF-8");
-                    logger.info("Decoded payeePartyId: " + payeePartyId);
+                    logger.info("Decoded payeePartyId: {}", payeePartyId);
                 } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                    logger.info(e.getLocalizedMessage());
                 }
             }
             specs.add(TransferSpecs.match(Transfer_.payeePartyId, payeePartyId));
@@ -122,9 +119,9 @@ public class OperationsDetailedApi {
             if (partyId.contains("%2B")) {
                 try {
                     partyId = URLDecoder.decode(partyId, "UTF-8");
-                    logger.info("Decoded PartyId: " + partyId);
+                    logger.info("Decoded PartyId: {}", partyId);
                 } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+                    logger.info(e.getLocalizedMessage());
                 }
             }
             specs.add(TransferSpecs.multiMatch(Transfer_.payerPartyId, Transfer_.payeePartyId, partyId));
@@ -275,23 +272,35 @@ public class OperationsDetailedApi {
         // Get the authenticated user by username
         AppUser currentUser = appUserRepository.findAppUserByName(authentication.getName());
         // filter transactions by dukas assigned to the user
-        logger.info(currentUser.getFirstname());
-        if (currentUser.getPayeePartyIdsList().isEmpty()) {
-            // user not allowed to see any duka data, return empty page of transactions
-            logger.info("user not allowed to see any duka data");
+        specs.addAll(getDukasSpecs(currentUser, payeePartyId));
+        // filter transactions by currencies assigned to the user
+        specs.addAll(getCurrenciesSpecs(currentUser, currency));
+        // filter transactions by PayeePartyIdTypes assigned to the user
+        specs.addAll(getPayeePartyIdTypeSpecs(currentUser, payeePartyIdType));
+        return specs;
+    }
+
+    private Collection<? extends Specifications<TransactionRequest>> getPayeePartyIdTypeSpecs(AppUser currentUser, String payeePartyIdType) {
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
+        if (currentUser.getPayeePartyIdTypesList().isEmpty()) {
+            // user not allowed to see any PayeePartyIdTypes data, return empty page of transactions
+            logger.info("user not allowed to see any PayeePartyIdTypes data");
             return new ArrayList<>();
-        } else if (currentUser.getPayeePartyIdsList().equals(Collections.singletonList("*"))) {
-            // user is allowed to see data from all dukas. Check if they wanna filter for a specific payee, otherwise don't add to spec
-            if (payeePartyId != null) {
-                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
+        } else if (currentUser.getPayeePartyIdTypesList().equals(Collections.singletonList("*"))) {
+            // user is allowed to see data from all payeePartyIdTypes. Check if they wanna filter for a specific payee, otherwise don't add to spec
+            if (payeePartyIdType != null) {
+                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
             }
         } else {
-            List<Specifications<TransactionRequest>> dukaSpecs = checkUserDukasAssigned(currentUser, payeePartyId);
-            if (!dukaSpecs.isEmpty())
-                specs.addAll(dukaSpecs);
+            List<Specifications<TransactionRequest>> partyIdTypeSpecs = checkUserPayeePartyIdTypesAssigned(currentUser, payeePartyIdType);
+            if (!partyIdTypeSpecs.isEmpty())
+                specs.addAll(partyIdTypeSpecs);
         }
+        return specs;
+    }
 
-        // filter transactions by currencies assigned to the user
+    private Collection<? extends Specifications<TransactionRequest>> getCurrenciesSpecs(AppUser currentUser, String currency) {
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
         if (currentUser.getCurrenciesList().isEmpty()) {
             // user not allowed to see any currency data, return empty page of transactions
             logger.info("user not allowed to see any currency data");
@@ -306,21 +315,24 @@ public class OperationsDetailedApi {
             if (!currencySpecs.isEmpty())
                 specs.addAll(currencySpecs);
         }
+        return specs;
+    }
 
-        // filter transactions by PayeePartyIdTypes assigned to the user
-        if (currentUser.getPayeePartyIdTypesList().isEmpty()) {
-            // user not allowed to see any PayeePartyIdTypes data, return empty page of transactions
-            logger.info("user not allowed to see any PayeePartyIdTypes data");
+    private Collection<? extends Specifications<TransactionRequest>> getDukasSpecs(AppUser currentUser, String payeePartyId) {
+        List<Specifications<TransactionRequest>> specs = new ArrayList<>();
+        if (currentUser.getPayeePartyIdsList().isEmpty()) {
+            // user not allowed to see any duka data, return empty page of transactions
+            logger.info("user not allowed to see any duka data");
             return new ArrayList<>();
-        } else if (currentUser.getPayeePartyIdTypesList().equals(Collections.singletonList("*"))) {
-            // user is allowed to see data from all payeePartyIdTypes. Check if they wanna filter for a specific payee, otherwise don't add to spec
-            if (payeePartyIdType != null) {
-                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyIdType, payeePartyIdType));
+        } else if (currentUser.getPayeePartyIdsList().equals(Collections.singletonList("*"))) {
+            // user is allowed to see data from all dukas. Check if they wanna filter for a specific payee, otherwise don't add to spec
+            if (payeePartyId != null) {
+                specs.add(TransactionRequestSpecs.match(TransactionRequest_.payeePartyId, payeePartyId));
             }
         } else {
-            List<Specifications<TransactionRequest>> partyIdTypeSpecs = checkUserPayeePartyIdTypesAssigned(currentUser, payeePartyIdType);
-            if (!partyIdTypeSpecs.isEmpty())
-                specs.addAll(partyIdTypeSpecs);
+            List<Specifications<TransactionRequest>> dukaSpecs = checkUserDukasAssigned(currentUser, payeePartyId);
+            if (!dukaSpecs.isEmpty())
+                specs.addAll(dukaSpecs);
         }
         return specs;
     }
@@ -425,15 +437,15 @@ public class OperationsDetailedApi {
             Filter filter;
             try {
                 filter = parseFilter(filterBy);
-                logger.info("Filter parsed successfully " + filter.name());
+                logger.info("Filter parsed successfully {}", filter.name());
             } catch (Exception e) {
-                logger.info("Unable to parse filter " + filterBy + " skipping");
+                logger.info("Unable to parse filter {} skipping", filterBy);
                 continue;
             }
             spec = getFilterSpecs(filter, ids);
             Page<TransactionRequest> result = executeRequest(spec, specs, page, size, sortedOrder);
             data.addAll(result.getContent());
-            logger.info("Result for " + filter + " : " + data);
+            logger.info("Result for {} : {}", filter, data);
         }
         if (data.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -528,7 +540,7 @@ public class OperationsDetailedApi {
      * @param specs the list of specification which is required to be merged in [baseSpec]
      */
     private <T> Specifications<T> combineSpecs(Specifications<T> baseSpec, List<Specifications<T>> specs) {
-        logger.info("Combining specs " + specs.size());
+        logger.info("Combining specs {}", specs.size());
         for (Specifications<T> specifications : specs) {
             baseSpec = baseSpec.and(specifications);
         }
