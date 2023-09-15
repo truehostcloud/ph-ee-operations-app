@@ -37,6 +37,9 @@ import static org.apache.fineract.core.service.OperatorUtils.dateFormat;
 @SecurityRequirement(name = "api")
 public class OperationsDetailedApi {
 
+    private static final String PARSE_DATE_FAILURE_MESSAGE = "failed to parse dates {} / {}";
+    private static final String STARTED_AT_STRING = "startedAt";
+    private static final String UTF = "UTF-8";
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
@@ -64,89 +67,14 @@ public class OperationsDetailedApi {
 
     @GetMapping("/transfers")
     public Page<TransferResponse> transfers(@RequestParam(value = "page", required = false, defaultValue = "0") Integer page, @RequestParam(value = "size", required = false, defaultValue = "1") Integer size, @RequestParam(value = "payerPartyId", required = false) String payerPartyId, @RequestParam(value = "payerDfspId", required = false) String payerDfspId, @RequestParam(value = "payeePartyId", required = false) String payeePartyId, @RequestParam(value = "payeeDfspId", required = false) String payeeDfspId, @RequestParam(value = "transactionId", required = false) String transactionId, @RequestParam(value = "status", required = false) String status, @RequestParam(value = "amount", required = false) BigDecimal amount, @RequestParam(value = "currency", required = false) String currency, @RequestParam(value = "startFrom", required = false) String startFrom, @RequestParam(value = "startTo", required = false) String startTo, @RequestParam(value = "direction", required = false) String direction, @RequestParam(value = "sortedBy", required = false) String sortedBy, @RequestParam(value = "partyId", required = false) String partyId, @RequestParam(value = "partyIdType", required = false) String partyIdType, @RequestParam(value = "clientCorrelationId", required = false) String clientCorrelationId, @RequestParam(value = "sortedOrder", required = false, defaultValue = "DESC") String sortedOrder) {
-        List<Specifications<Transfer>> specs = new ArrayList<>();
+        List<Specifications<Transfer>> specs = getSearchSpecifications(status, amount, currency, direction, partyId, partyIdType, clientCorrelationId);
+        specs.addAll(getSearchSpecification(payerPartyId, payerDfspId, payeeDfspId, payeePartyId, transactionId));
 
-        if (payerPartyId != null) {
-            if (payerPartyId.contains("%2B")) {
-                try {
-                    payerPartyId = URLDecoder.decode(payerPartyId, "UTF-8");
-                    logger.info("Decoded payerPartyId: {}", payerPartyId);
-                } catch (UnsupportedEncodingException e) {
-                    logger.info(e.getLocalizedMessage());
-                }
-            }
-            specs.add(TransferSpecs.match(Transfer_.payerPartyId, payerPartyId));
-        }
-        if (payeePartyId != null) {
-            if (payeePartyId.contains("%2B")) {
-                try {
-                    payeePartyId = URLDecoder.decode(payeePartyId, "UTF-8");
-                    logger.info("Decoded payeePartyId: {}", payeePartyId);
-                } catch (UnsupportedEncodingException e) {
-                    logger.info(e.getLocalizedMessage());
-                }
-            }
-            specs.add(TransferSpecs.match(Transfer_.payeePartyId, payeePartyId));
-        }
-        if (payeeDfspId != null) {
-            specs.add(TransferSpecs.match(Transfer_.payeeDfspId, payeeDfspId));
-        }
-        if (payerDfspId != null) {
-            specs.add(TransferSpecs.match(Transfer_.payerDfspId, payerDfspId));
-        }
-        if (transactionId != null) {
-            specs.add(TransferSpecs.match(Transfer_.transactionId, transactionId));
-        }
-        if (clientCorrelationId != null) {
-            specs.add(TransferSpecs.match(Transfer_.clientCorrelationId, clientCorrelationId));
-        }
-        if (status != null && parseStatus(status) != null) {
-            specs.add(TransferSpecs.match(Transfer_.status, parseStatus(status)));
-        }
-        if (amount != null) {
-            specs.add(TransferSpecs.match(Transfer_.amount, amount));
-        }
-        if (currency != null) {
-            specs.add(TransferSpecs.match(Transfer_.currency, currency));
-        }
-        if (direction != null) {
-            specs.add(TransferSpecs.match(Transfer_.direction, direction));
-        }
-        if (partyIdType != null) {
-            specs.add(TransferSpecs.multiMatch(Transfer_.payeePartyIdType, Transfer_.payerPartyIdType, partyIdType));
-        }
-        if (partyId != null) {
-            if (partyId.contains("%2B")) {
-                try {
-                    partyId = URLDecoder.decode(partyId, "UTF-8");
-                    logger.info("Decoded PartyId: {}", partyId);
-                } catch (UnsupportedEncodingException e) {
-                    logger.info(e.getLocalizedMessage());
-                }
-            }
-            specs.add(TransferSpecs.multiMatch(Transfer_.payerPartyId, Transfer_.payeePartyId, partyId));
-        }
-        if (startFrom != null) {
-            startFrom = dateUtil.getUTCFormat(startFrom);
-        }
-        if (startTo != null) {
-            startTo = dateUtil.getUTCFormat(startTo);
-        }
-        try {
-            if (startFrom != null && startTo != null) {
-                specs.add(TransferSpecs.between(Transfer_.startedAt, dateFormat().parse(startFrom), dateFormat().parse(startTo)));
-            } else if (startFrom != null) {
-                specs.add(TransferSpecs.later(Transfer_.startedAt, dateFormat().parse(startFrom)));
-            } else if (startTo != null) {
-                specs.add(TransferSpecs.earlier(Transfer_.startedAt, dateFormat().parse(startTo)));
-            }
-        } catch (Exception e) {
-            logger.warn("failed to parse dates {} / {}", startFrom, startTo);
-        }
+        specs.addAll(getDateSearchSpecs(startFrom, startTo));
 
         PageRequest pager;
-        if (sortedBy == null || "startedAt" .equals(sortedBy)) {
-            pager = new PageRequest(page, size, new Sort(Sort.Direction.fromString(sortedOrder), "startedAt"));
+        if (sortedBy == null || STARTED_AT_STRING.equals(sortedBy)) {
+            pager = new PageRequest(page, size, new Sort(Sort.Direction.fromString(sortedOrder), STARTED_AT_STRING));
         } else {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.fromString(sortedOrder), sortedBy));
         }
@@ -181,9 +109,113 @@ public class OperationsDetailedApi {
             }
         }
 
-        Page<TransferResponse> paginatedTransferResponse = new PageImpl<>(transferResponseList, transferPage.getPageable(), transferPage.getTotalPages());
+        return new PageImpl<>(transferResponseList, transferPage.getPageable(), transferPage.getTotalPages());
 
-        return paginatedTransferResponse;
+    }
+
+    private Collection<Specifications<Transfer>> getDateSearchSpecs(String startFrom, String startTo) {
+        List<Specifications<Transfer>> specs = new ArrayList<>();
+        if (startFrom != null) {
+            startFrom = dateUtil.getUTCFormat(startFrom);
+        }
+        if (startTo != null) {
+            startTo = dateUtil.getUTCFormat(startTo);
+        }
+        try {
+            if (startFrom != null && startTo != null) {
+                specs.add(TransferSpecs.between(Transfer_.startedAt, dateFormat().parse(startFrom), dateFormat().parse(startTo)));
+            } else if (startFrom != null) {
+                specs.add(TransferSpecs.later(Transfer_.startedAt, dateFormat().parse(startFrom)));
+            } else if (startTo != null) {
+                specs.add(TransferSpecs.earlier(Transfer_.startedAt, dateFormat().parse(startTo)));
+            }
+        } catch (Exception e) {
+            logger.warn(PARSE_DATE_FAILURE_MESSAGE, startFrom, startTo);
+        }
+        return specs;
+    }
+
+    private List<Specifications<Transfer>> getSearchSpecification(String payerPartyId, String payerDfspId, String payeeDfspId, String payeePartyId, String transactionId) {
+        List<Specifications<Transfer>> specs = new ArrayList<>();
+        if (payerPartyId != null) {
+            specs.add(getPayerPartyIdSearchSpec(payerPartyId));
+        }
+        if (payeePartyId != null) {
+            specs.add(getPayeePartyIdSearchSpec(payeePartyId));
+        }
+        if (payeeDfspId != null) {
+            specs.add(TransferSpecs.match(Transfer_.payeeDfspId, payeeDfspId));
+        }
+        if (payerDfspId != null) {
+            specs.add(TransferSpecs.match(Transfer_.payerDfspId, payerDfspId));
+        }
+        if (transactionId != null) {
+            specs.add(TransferSpecs.match(Transfer_.transactionId, transactionId));
+        }
+        return specs;
+    }
+
+    private List<Specifications<Transfer>> getSearchSpecifications(String status, BigDecimal amount, String currency, String direction, String partyId, String partyIdType, String clientCorrelationId) {
+        List<Specifications<Transfer>> specs = new ArrayList<>();
+        if (clientCorrelationId != null) {
+            specs.add(TransferSpecs.match(Transfer_.clientCorrelationId, clientCorrelationId));
+        }
+        if (status != null && parseStatus(status) != null) {
+            specs.add(TransferSpecs.match(Transfer_.status, parseStatus(status)));
+        }
+        if (amount != null) {
+            specs.add(TransferSpecs.match(Transfer_.amount, amount));
+        }
+        if (currency != null) {
+            specs.add(TransferSpecs.match(Transfer_.currency, currency));
+        }
+        if (direction != null) {
+            specs.add(TransferSpecs.match(Transfer_.direction, direction));
+        }
+        if (partyIdType != null) {
+            specs.add(TransferSpecs.multiMatch(Transfer_.payeePartyIdType, Transfer_.payerPartyIdType, partyIdType));
+        }
+        if (partyId != null) {
+
+            specs.add(getPartyIdSearchSpec(partyId));
+        }
+        return specs;
+    }
+
+    private Specifications<Transfer> getPartyIdSearchSpec(String partyId) {
+        if (partyId.contains("%2B")) {
+            try {
+                partyId = URLDecoder.decode(partyId, UTF);
+                logger.info("Decoded PartyId: {}", partyId);
+            } catch (UnsupportedEncodingException e) {
+                logger.info(e.getLocalizedMessage());
+            }
+        }
+        return TransferSpecs.multiMatch(Transfer_.payerPartyId, Transfer_.payeePartyId, partyId);
+    }
+
+    private Specifications<Transfer> getPayerPartyIdSearchSpec(String payerPartyId) {
+        if (payerPartyId.contains("%2B")) {
+            try {
+                payerPartyId = URLDecoder.decode(payerPartyId, UTF);
+                logger.info("Decoded payerPartyId: {}", payerPartyId);
+            } catch (UnsupportedEncodingException e) {
+                logger.info(e.getLocalizedMessage());
+            }
+        }
+        return TransferSpecs.match(Transfer_.payerPartyId, payerPartyId);
+    }
+
+    private Specifications<Transfer> getPayeePartyIdSearchSpec(String payeePartyId) {
+        if (payeePartyId.contains("%2B")) {
+            try {
+                payeePartyId = URLDecoder.decode(payeePartyId, UTF);
+                logger.info("Decoded payeePartyId: {}", payeePartyId);
+            } catch (UnsupportedEncodingException e) {
+                logger.info(e.getLocalizedMessage());
+            }
+        }
+        return TransferSpecs.match(Transfer_.payeePartyId, payeePartyId);
     }
 
     @GetMapping("/transactionRequests")
@@ -238,15 +270,15 @@ public class OperationsDetailedApi {
                 specs.add(TransactionRequestSpecs.earlier(TransactionRequest_.startedAt, dateFormat().parse(startTo)));
             }
         } catch (Exception e) {
-            logger.warn("failed to parse dates {} / {}", startFrom, startTo);
+            logger.warn(PARSE_DATE_FAILURE_MESSAGE, startFrom, startTo);
         }
         return specs;
     }
 
     private PageRequest getPager(String sortedBy, Integer page, Integer size, String sortedOrder) {
         PageRequest pager;
-        if (sortedBy == null || "startedAt" .equals(sortedBy)) {
-            pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), "startedAt"));
+        if (sortedBy == null || STARTED_AT_STRING .equals(sortedBy)) {
+            pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), STARTED_AT_STRING));
         } else {
             pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), sortedBy));
         }
@@ -424,16 +456,14 @@ public class OperationsDetailedApi {
             specs.add(getDateSpecification(startTo, startFrom));
             logger.info("Date filter parsed successful");
         } catch (Exception e) {
-            logger.warn("failed to parse dates {} / {}", startFrom, startTo);
+            logger.warn(PARSE_DATE_FAILURE_MESSAGE, startFrom, startTo);
         }
 
         Specifications<TransactionRequest> spec = null;
         List<TransactionRequest> data = new ArrayList<>();
         for (String filterBy : filterByList) {
             List<String> ids = body.get(filterBy);
-            if (ids.isEmpty()) {
-                continue;
-            }
+            if (!ids.isEmpty()) {
             Filter filter;
             try {
                 filter = parseFilter(filterBy);
@@ -446,6 +476,7 @@ public class OperationsDetailedApi {
             Page<TransactionRequest> result = executeRequest(spec, specs, page, size, sortedOrder);
             data.addAll(result.getContent());
             logger.info("Result for {} : {}", filter, data);
+        }
         }
         if (data.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -522,7 +553,7 @@ public class OperationsDetailedApi {
      * @param sortedOrder the order of sorting to be applied ASC OR DESC
      */
     private Page<TransactionRequest> executeRequest(Specifications<TransactionRequest> baseSpec, List<Specifications<TransactionRequest>> extraSpecs, int page, int size, String sortedOrder) {
-        PageRequest pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), "startedAt"));
+        PageRequest pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), STARTED_AT_STRING));
         Page<TransactionRequest> result;
         if (baseSpec == null) {
             result = transactionRequestRepository.findAll(pager);
