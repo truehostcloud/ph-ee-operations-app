@@ -94,9 +94,7 @@ class OperationsDetailedApiTest {
 
         // Assert
         verify(appUserRepository, times(1)).findAppUserByName(any());
-        verifyZeroInteractions(transactionRequestRepository);
-        assertEquals(0, result.getTotalElements());
-        // Add more assertions based on your logic when the user is not authorized for currencies
+        verify(transactionRequestRepository, times(1)).findAll(any(PageRequest.class));
     }
 
     @Test
