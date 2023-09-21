@@ -1,11 +1,12 @@
 Release Notes
 
-## Up to date with Mifos Version 1.5.0
+## Version 1.0.0 - Up to date with Mifos Version 1.5.0
 
     * Payment Hub OPs
         * Transaction Requests
             * [SER-1605] - Filter incoming transactions by user's currency and payeePartyIds
             * [SER-1646] - Filter incoming transactions by user's assigned payeePartyIdTypes
+            * [SER-1926] - Ensure the exported csv contains accurate data
         * Deployment
             * [SER-1875] - Add pipeline deployment file for Azure
         * User Management
