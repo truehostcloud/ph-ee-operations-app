@@ -460,24 +460,24 @@ public class OperationsDetailedApi {
         }
 
         Specifications<TransactionRequest> spec = null;
-        List<TransactionRequest> data = new ArrayList<>();
         for (String filterBy : filterByList) {
             List<String> ids = body.get(filterBy);
             if (!ids.isEmpty()) {
-            Filter filter;
-            try {
-                filter = parseFilter(filterBy);
-                logger.info("Filter parsed successfully {}", filter.name());
-            } catch (Exception e) {
-                logger.info("Unable to parse filter {} skipping", filterBy);
-                continue;
+                Filter filter;
+                try {
+                    filter = parseFilter(filterBy);
+                    logger.info("Filter parsed successfully {}", filter.name());
+                } catch (Exception e) {
+                    logger.info("Unable to parse filter {} skipping", filterBy);
+                    continue;
+                }
+                spec = getFilterSpecs(filter, ids);
+                specs.add(spec);
             }
-            spec = getFilterSpecs(filter, ids);
-            Page<TransactionRequest> result = executeRequest(spec, specs, page, size, sortedOrder);
-            data.addAll(result.getContent());
-            logger.info("Result for {} : {}", filter, data);
         }
-        }
+        PageRequest pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), STARTED_AT_STRING));
+        Page<TransactionRequest> result = transactionRequestsResponse(specs, pager);
+        List<TransactionRequest> data = result.getContent();
         if (data.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return new ErrorResponse.Builder().setErrorCode("" + HttpServletResponse.SC_NOT_FOUND).setErrorDescription("Empty response").setDeveloperMessage("Empty response").build();
