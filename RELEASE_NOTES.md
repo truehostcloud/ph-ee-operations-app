@@ -9,6 +9,7 @@ Release Notes
             * [SER-1926] - Ensure the exported csv contains accurate data
         * Deployment
             * [SER-1875] - Add pipeline deployment file for Azure
+        * Audit
+            * [SER-1822] - Setup audit of user actions
         * User Management
             * [SER-1656] - Activate and deactivate users
-            

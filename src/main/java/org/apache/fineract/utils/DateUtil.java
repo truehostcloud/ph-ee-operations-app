@@ -4,11 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 
 @Component
 public class DateUtil {
@@ -25,5 +28,15 @@ public class DateUtil {
         DateTimeFormatter gmtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String gmtDateTimeString = gmtDateTime.format(gmtFormatter);
         return gmtDateTimeString;
+    }
+
+    public LocalDateTime getLocalDateTimeOfTenant(HttpServletRequest request) {
+        ZoneId zone = null;
+        if (request != null) {
+            TimeZone timeZone = RequestContextUtils.getTimeZone(request);
+            if (timeZone != null)
+                zone = timeZone.toZoneId();
+        }
+        return LocalDateTime.now(zone != null ? zone : ZoneId.systemDefault());
     }
 }
