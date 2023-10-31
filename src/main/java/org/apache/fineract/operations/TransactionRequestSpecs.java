@@ -33,6 +33,10 @@ public class TransactionRequestSpecs {
         return where((root, query, builder) -> builder.equal(root.get(attribute), input));
     }
 
+    public static <T> Specifications<TransactionRequest> like(SingularAttribute<TransactionRequest, T> attribute, T input) {
+        return where((root, query, builder) -> builder.like(root.get(attribute.getName()), "%" + input + "%"));
+    }
+
     public static <T> Specifications<TransactionRequest> in(SingularAttribute<TransactionRequest, T> attribute, List<T> inputs) {
         return where(((root, query, cb) -> {
             final Path<T> group = root.get(attribute);
