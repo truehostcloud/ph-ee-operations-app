@@ -476,7 +476,8 @@ public class OperationsDetailedApi {
             }
         }
         PageRequest pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), STARTED_AT_STRING));
-        Page<TransactionRequest> result = transactionRequestsResponse(specs, pager);
+        // passing nulls for currency, payeePartyId and payeePartyIdType here to mean that the results should be restricted to the user's assignments
+        Page<TransactionRequest> result = transactionRequestFilter(pager, specs, null, null, null);
         List<TransactionRequest> data = result.getContent();
         if (data.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
