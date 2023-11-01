@@ -103,11 +103,12 @@ public class UsersApi {
 
     @PutMapping(path = "/user/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public void update(@PathVariable("userId") Long userId, @RequestBody AppUser appUser, HttpServletResponse response) {
-        AppUser existing = appuserRepository.findById(userId).get();
-        if (existing != null) {
+        Optional<AppUser> existing = appuserRepository.findById(userId);
+        if (existing.isPresent()) {
             appUser.setId(userId);
-            appUser.setPassword(passwordEncoder.encode(appUser.getPassword()));
-            appUser.setRoles(existing.getRoles());
+            if (!existing.get().getPassword().equals(appUser.getPassword()))
+                appUser.setPassword(passwordEncoder.encode(appUser.getPassword()));
+            appUser.setRoles(existing.get().getRoles());
             appuserRepository.saveAndFlush(appUser);
         } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
