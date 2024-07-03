@@ -52,7 +52,7 @@ dependencies {
 }
 
 group = 'org.apache.fineract'
-version = '1.0.0-SNAPSHOT'
+version = 'v1.0.2'
 sourceCompatibility = '1.8'
 
 
@@ -78,4 +78,10 @@ tasks.withType(JavaCompile) {
 }
 test {
     useJUnitPlatform()
+}
+
+tasks.register('printVersion') {
+    doLast {
+        println project.version
+    }
 }
