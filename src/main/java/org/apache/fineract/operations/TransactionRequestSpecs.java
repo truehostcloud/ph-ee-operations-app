@@ -8,7 +8,7 @@ import java.util.List;
 
 import static org.springframework.data.jpa.domain.Specifications.where;
 
-public class TransactionRequestSpecs extends Specs {
+public class TransactionRequestSpecs {
 
     public static Specifications<TransactionRequest> between(SingularAttribute<TransactionRequest, Date> attribute, Date from, Date to) {
         return where((root, query, builder) -> builder.and(
@@ -48,6 +48,17 @@ public class TransactionRequestSpecs extends Specs {
 
             return cb.and(cr, a);
         }));
+    }
+
+    /**
+     * Creates IN clause specification for {@link TransactionRequest}
+     * @param attribute attribute to be checked
+     * @param inputs list of inputs
+     * @return {@link Specifications<TransactionRequest>
+     * @param <T> type of the attribute
+     */
+    public static <T> Specifications<TransactionRequest> in(SingularAttribute<TransactionRequest, T> attribute, List<T> inputs) {
+        return Specs.in(attribute, inputs);
     }
 
 }

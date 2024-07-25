@@ -496,7 +496,7 @@ public class OperationsDetailedApi {
         List<TransactionRequest> data = result.getContent();
         if (data.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return new ErrorResponse.Builder().setErrorCode("" + HttpServletResponse.SC_NOT_FOUND).setErrorDescription("Empty response").setDeveloperMessage("Empty response").build();
+            return ErrorResponse.forEmptyResult();
         }
         try {
             CsvUtility.writeToCsv(response, data, generateCsvFileName("transactionRequest_"));
@@ -536,7 +536,7 @@ public class OperationsDetailedApi {
         List<Transfer> data = result.getContent();
         if (data.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return new ErrorResponse.Builder().setErrorCode("" + HttpServletResponse.SC_NOT_FOUND).setErrorDescription("Empty response").setDeveloperMessage("Empty response").build();
+            return ErrorResponse.forEmptyResult();
         }
         try {
             CsvUtility.writeToCsv(response, data, generateCsvFileName("transfer_"));

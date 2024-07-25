@@ -10,9 +10,11 @@ import java.util.List;
 import static org.springframework.data.jpa.domain.Specifications.where;
 
 /**
- * Parent class for all the specs classes
+ * Contains methods for common specification operations
  */
-public abstract class Specs {
+public class Specs {
+
+    private Specs() {}
 
     /**
      * Creates specification for IN clause
