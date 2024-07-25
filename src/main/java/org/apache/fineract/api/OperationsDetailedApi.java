@@ -532,7 +532,6 @@ public class OperationsDetailedApi {
             }
         }
         PageRequest pager = new PageRequest(page, size, new Sort(Sort.Direction.valueOf(sortedOrder), STARTED_AT_STRING));
-        // passing nulls for currency, payeePartyId and payeePartyIdType here to mean that the results should be restricted to the user's assignments
         Page<Transfer> result = getTransfers(specs, pager);
         List<Transfer> data = result.getContent();
         if (data.isEmpty()) {
