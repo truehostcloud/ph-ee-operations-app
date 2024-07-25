@@ -7,7 +7,7 @@ import java.util.Date;
 
 import static org.springframework.data.jpa.domain.Specifications.where;
 
-public class TransferSpecs {
+public class TransferSpecs extends Specs {
 
     public static Specifications<Transfer> between(SingularAttribute<Transfer, Date> attribute, Date from, Date to) {
         return where((root, query, builder) -> builder.and(

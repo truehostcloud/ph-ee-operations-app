@@ -1,9 +1,6 @@
 package org.apache.fineract.operations;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specifications;
-import org.springframework.stereotype.Component;
-import javax.persistence.EntityManager;
 import javax.persistence.criteria.*;
 import javax.persistence.metamodel.SingularAttribute;
 import java.util.Date;
@@ -11,7 +8,7 @@ import java.util.List;
 
 import static org.springframework.data.jpa.domain.Specifications.where;
 
-public class TransactionRequestSpecs {
+public class TransactionRequestSpecs extends Specs {
 
     public static Specifications<TransactionRequest> between(SingularAttribute<TransactionRequest, Date> attribute, Date from, Date to) {
         return where((root, query, builder) -> builder.and(
@@ -35,17 +32,6 @@ public class TransactionRequestSpecs {
 
     public static <T> Specifications<TransactionRequest> like(SingularAttribute<TransactionRequest, T> attribute, T input) {
         return where((root, query, builder) -> builder.like(root.get(attribute.getName()), "%" + input + "%"));
-    }
-
-    public static <T> Specifications<TransactionRequest> in(SingularAttribute<TransactionRequest, T> attribute, List<T> inputs) {
-        return where(((root, query, cb) -> {
-            final Path<T> group = root.get(attribute);
-            CriteriaBuilder.In<T> cr = cb.in(group);
-            for(T input: inputs ) {
-                cr.value(input);
-            }
-            return cr;
-        }));
     }
 
     public static Specifications<TransactionRequest> filterByErrorDescription(List<String> errorDescriptions) {
