@@ -1,5 +1,11 @@
 Release Notes
 
+## Version 1.1.0 - Up to date with Mifos Version 1.5.0
+
+    * Payment Hub OPs
+        * Transfers
+            * [SER-2925] - Create API for exporting transfers
+
 ## Version 1.0.2 - Up to date with Mifos Version 1.5.0
 
     * Payment Hub OPs
