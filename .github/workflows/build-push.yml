@@ -22,4 +22,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ph-ee-operations-app:${{ github.ref_name }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ph-ee-operations-app:${{ github.sha }}
